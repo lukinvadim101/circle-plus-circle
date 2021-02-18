@@ -3,6 +3,7 @@ class CirclesIntersection {
         this.circleStrokeColor = `white`; // одинаковая обводка для всех кругов
         this.intersectionFillColor = `#666677`; // серый
         this.intersectionStrokeColor = `white`;
+        this.circleSpeed = 0.3;
     }
 
     init() { // вызов функций
@@ -44,13 +45,17 @@ class CirclesIntersection {
 
         this.circles = []; // созд массив и наполняем его объекта используя цикл
         for (let i = 0; i < circlesNum; ++i) {
+            let randonAngle = Math.random() * (Math.PI * 2); // ! случайное направление к точке на окружности
             let newCircle = {
                 color: this.getRandomColor(0.5), // полупрозрачный случайный
                 radius: this.getRandomFromRange(minRadius, maxRadius),
                 xPos: this.getRandomFromRange(maxRadius, this.w - maxRadius), // кргу не выходит за границы экрана
                 yPos: this.getRandomFromRange(maxRadius, this.h - maxRadius),
+                velocityX: Math.cos(randonAngle), // вдижение по х. преобразование в радианы
+                velocityY: Math.sin(randonAngle),
             }
             this.circles.push(newCircle); // добавляем объекты в массив + вызов В INIT
+            
         }
     }
 
@@ -59,9 +64,23 @@ class CirclesIntersection {
     }
 
     updateCircles() {
+        this.ctx.globalCompositeOperation = `color-dodge`; // меняет свойство наложеий форм
+
         this.circles.forEach(circle => { // перебирает массив и рисует круги
+            if (circle.xPos + circle.radius > this.w && circle.velocityX > 0 || circle.xPos < circle.radius && circle.velocityX < 0) {
+                circle.velocityX = -circle.velocityX; // если выходит за рамки меняем скорость на обратную
+            }
+            if (circle.yPos + circle.radius > this.h && circle.velocityY > 0 || circle.yPos < circle.radius && circle.velocityY < 0) {
+                circle.velocityY = -circle.velocityY; // если выходит за рамки меняем скорость на обратную
+            }
+
+            circle.xPos += circle.velocityX * this.circleSpeed; // задаём  случайное движение (число)
+            circle.yPos += circle.velocityY * this.circleSpeed;
+            
             this.drawCircle(circle.xPos, circle.yPos, circle.radius, circle.color, this.circleStrokeColor);
         });
+
+        this.ctx.globalCompositeOperation = `normal`;
     }
 
     drawCircle(x, y, radius, fillColor, strokeColor) {
@@ -109,13 +128,21 @@ class CirclesIntersection {
         this.drawCircle(pointTwoX,pointTwoY, this.intersectionDotRadius, this.intersectionFillColor, this.intersectionStrokeColo);
 
     }
+    clearCanvas(){
+        this.ctx.clearRect(0, 0, this.w, this.h);
+    }
 
     updateAnimation() { // эту в инит вызываем
+        this.clearCanvas(); // очистка до обновления
         this.updateCircles(); // вызываем функцию рисования кргуов
         this.getIntersection(); // отрисовка пересечейний
+
+        window.requestAnimationFrame(()=> this.updateAnimation()); // зацикливаем функцию
     }
 }
 
 window.onload = () => { // вызов всего по загрузке
+    new CirclesIntersection().init();
+    new CirclesIntersection().init(); // клоны
     new CirclesIntersection().init();
 };
